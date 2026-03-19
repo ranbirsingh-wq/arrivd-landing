@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="460" height="88" viewBox="0 0 460 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+  
+  <!-- Check tail -->
+  <line x1="4" y1="45" x2="18" y2="68" stroke="#7C3AED" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Left leg / check upstroke -->
+  <line x1="18" y1="68" x2="42" y2="8" stroke="#7C3AED" stroke-width="13" stroke-linecap="round"/>
+  <!-- Right leg -->
+  <line x1="42" y1="8" x2="66" y2="68" stroke="#7C3AED" stroke-width="13" stroke-linecap="round"/>
+  <!-- Crossbar at golden section -->
+  <line x1="27" y1="45" x2="57" y2="45" stroke="#7C3AED" stroke-width="8" stroke-linecap="round"/>
+  <!-- rrivd in Outfit Black 900 -->
+  <text x="77" y="70" font-family="Outfit, sans-serif" font-weight="900" font-size="68" fill="#0C0A1A" letter-spacing="2">rrivd</text>
+</svg>
