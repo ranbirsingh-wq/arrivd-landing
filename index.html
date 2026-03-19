@@ -58,11 +58,36 @@
             z-index: -2; overflow: hidden;
         }
         .video-bg video {
+            position: absolute; top: 0; left: 0;
             width: 100%; height: 100%; object-fit: cover;
             filter: blur(16px) saturate(1.3) brightness(1.08);
             transform: scale(1.15) translateZ(0);
             will-change: transform;
             backface-visibility: hidden;
+            transition: opacity 0.8s ease;
+        }
+        .video-bg video.hidden { opacity: 0; }
+
+        /* ─── BG Toggle ─── */
+        .bg-toggle {
+            position: fixed; bottom: 24px; right: 24px; z-index: 200;
+            display: flex; align-items: center; gap: 0;
+            background: #ffffff; border-radius: 100px;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
+            padding: 4px; cursor: pointer;
+            transition: box-shadow 0.3s;
+        }
+        .bg-toggle:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.16); }
+        .bg-toggle-btn {
+            padding: 8px 16px; border-radius: 100px;
+            font-family: 'Outfit', sans-serif; font-size: 12px;
+            font-weight: 600; border: none; cursor: pointer;
+            transition: all 0.3s; background: transparent; color: #888;
+        }
+        .bg-toggle-btn.active {
+            background: var(--accent); color: #fff;
+            box-shadow: 0 2px 8px rgba(124,58,237,0.3);
         }
         .video-bg-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
@@ -675,12 +700,21 @@
 
     <div class="video-bg-fallback"></div>
     <div class="video-bg">
-        <video autoplay muted loop playsinline preload="auto" id="bgVideo" poster="bg-poster.jpg">
+        <video autoplay muted loop playsinline preload="auto" id="bgVideo1" poster="bg-poster.jpg">
             <source src="bg-video-opt.mp4" type="video/mp4">
+        </video>
+        <video muted loop playsinline preload="none" id="bgVideo2" poster="bg-poster-2.jpg" class="hidden">
+            <source src="bg-video-2.mp4" type="video/mp4">
         </video>
     </div>
     <div class="video-bg-overlay"></div>
     <div class="particles" id="particles"></div>
+
+    <!-- BG Toggle -->
+    <div class="bg-toggle" aria-label="Switch background">
+        <button class="bg-toggle-btn active" onclick="switchBg(0)">Sunset</button>
+        <button class="bg-toggle-btn" onclick="switchBg(1)">Blossom</button>
+    </div>
 
     <!-- Nav -->
     <nav>
@@ -908,12 +942,30 @@
     </footer>
 
     <script>
-        // Video
-        const v = document.getElementById('bgVideo');
-        v.play().catch(() => {
-            document.addEventListener('click', () => v.play(), { once: true });
-            document.addEventListener('touchstart', () => v.play(), { once: true });
+        // Videos
+        const videos = [document.getElementById('bgVideo1'), document.getElementById('bgVideo2')];
+        let currentBg = 0;
+        videos[0].play().catch(() => {
+            document.addEventListener('click', () => videos[0].play(), { once: true });
         });
+
+        function switchBg(idx) {
+            if (idx === currentBg) return;
+            const prev = videos[currentBg];
+            const next = videos[idx];
+            // Preload and play the next video
+            next.preload = 'auto';
+            next.load();
+            next.play().then(() => {
+                next.classList.remove('hidden');
+                prev.classList.add('hidden');
+                currentBg = idx;
+                // Update toggle buttons
+                document.querySelectorAll('.bg-toggle-btn').forEach((b, i) => {
+                    b.classList.toggle('active', i === idx);
+                });
+            }).catch(() => {});
+        }
 
         // Particles
         const pEl = document.getElementById('particles');
