@@ -11,6 +11,7 @@ interface Subscriber {
 
 export default function DashboardPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -49,9 +50,31 @@ export default function DashboardPage() {
     setLoading(false);
   }
 
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selected.size === subscribers.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(subscribers.map((s) => s.id)));
+    }
+  }
+
+  const sendCount = selected.size || subscribers.length;
+  const sendLabel = selected.size > 0
+    ? `Send to ${selected.size} selected`
+    : `Send to all ${subscribers.length}`;
+
   async function handleSendEmail(e: React.FormEvent) {
     e.preventDefault();
-    if (!confirm(`Send email to ${subscribers.length} subscribers?`)) return;
+    if (!confirm(`Send email to ${sendCount} subscriber${sendCount > 1 ? "s" : ""}?`)) return;
 
     setSending(true);
     setResult(null);
@@ -59,7 +82,13 @@ export default function DashboardPage() {
     const res = await fetch("/api/send-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject, html: body.replace(/\n/g, "<br>") }),
+      body: JSON.stringify({
+        subject,
+        html: body.replace(/\n/g, "<br>"),
+        emails: selected.size > 0
+          ? subscribers.filter((s) => selected.has(s.id)).map((s) => s.email)
+          : undefined,
+      }),
     });
 
     const data = await res.json();
@@ -142,10 +171,31 @@ export default function DashboardPage() {
         {/* Subscriber List */}
         <div className="glass overflow-hidden">
           <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(124,58,237,0.06)" }}>
-            <h2 className="font-semibold text-[#1a1a2e] text-sm">Subscribers</h2>
-            <span className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(124,58,237,0.08)", color: "#7C3AED" }}>
-              {subscribers.length}
-            </span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleAll}
+                className="w-5 h-5 rounded flex items-center justify-center transition cursor-pointer"
+                style={{
+                  background: selected.size === subscribers.length && subscribers.length > 0 ? "#7C3AED" : "rgba(124,58,237,0.06)",
+                  border: selected.size === subscribers.length && subscribers.length > 0 ? "none" : "1.5px solid rgba(124,58,237,0.15)",
+                }}
+              >
+                {selected.size === subscribers.length && subscribers.length > 0 && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                )}
+              </button>
+              <h2 className="font-semibold text-[#1a1a2e] text-sm">Subscribers</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              {selected.size > 0 && (
+                <span className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(124,58,237,0.12)", color: "#7C3AED" }}>
+                  {selected.size} selected
+                </span>
+              )}
+              <span className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(124,58,237,0.06)", color: "#9992ab" }}>
+                {subscribers.length}
+              </span>
+            </div>
           </div>
           <div className="max-h-[420px] overflow-y-auto">
             {loading ? (
@@ -157,12 +207,27 @@ export default function DashboardPage() {
                 {subscribers.map((sub, i) => (
                   <div
                     key={sub.id}
-                    className="flex items-center justify-between px-6 py-3.5 transition-colors hover:bg-[rgba(124,58,237,0.02)]"
+                    className="flex items-center justify-between px-6 py-3.5 transition-colors cursor-pointer"
                     style={{
                       borderBottom: i < subscribers.length - 1 ? "1px solid rgba(124,58,237,0.04)" : "none",
+                      background: selected.has(sub.id) ? "rgba(124,58,237,0.03)" : "transparent",
                     }}
+                    onClick={() => toggleSelect(sub.id)}
+                    onMouseEnter={(e) => { if (!selected.has(sub.id)) e.currentTarget.style.background = "rgba(124,58,237,0.015)"; }}
+                    onMouseLeave={(e) => { if (!selected.has(sub.id)) e.currentTarget.style.background = "transparent"; }}
                   >
                     <div className="flex items-center gap-3">
+                      <div
+                        className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition"
+                        style={{
+                          background: selected.has(sub.id) ? "#7C3AED" : "rgba(124,58,237,0.06)",
+                          border: selected.has(sub.id) ? "none" : "1.5px solid rgba(124,58,237,0.15)",
+                        }}
+                      >
+                        {selected.has(sub.id) && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        )}
+                      </div>
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
                         style={{
@@ -232,7 +297,7 @@ export default function DashboardPage() {
                 boxShadow: "0 8px 24px rgba(124,58,237,0.2)",
               }}
             >
-              {sending ? "Sending..." : `Send to ${subscribers.length} subscribers`}
+              {sending ? "Sending..." : sendLabel}
             </button>
           </form>
         </div>
